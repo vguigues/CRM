@@ -792,7 +792,7 @@ function solve_sc_crm(x0::AbstractVector, y::AbstractMatrix, Q::AbstractArray,
 	while (norm(x - target) > epsilon)
 		A::UInt = (iter % k) + 1
 		B::UInt = A == k ? 1 : A + 1
-		update_sc_crm!(x, A, B, y, Q, env, iter, x0)
+		update_sc_crm!(x, A, B, y, Q, env)
 		# push!(points_x, x[1])
 		# push!(points_y, x[2])
 		iter += 1
@@ -1016,6 +1016,8 @@ function test_cutting_plane(k::UInt, n::UInt, m::UInt, max_iter::UInt, alpha::Re
 
 	x0 = 20 * ones(n)
 	ϵ = 0.1
+	epsilonStop::Real=10^(-4)
+	beta::Real=0.5
 	println("\tviolation x0 = ", max_violation(x0, y, Q))
 	target = projection_intersection_polyhedron(x0, y, Q, 0.1, env)
 	println("\tTarget found!")
@@ -1028,13 +1030,11 @@ function test_cutting_plane(k::UInt, n::UInt, m::UInt, max_iter::UInt, alpha::Re
 	# time_3pm = measure_fast_method_time(() -> solve_3pm(x0, y, Q, max_iter, env, ϵ, target), time_3pm)
 	# @show violation_3pm[end], time_3pm, iter_3pm
 
-	x_alt_proj, violation_alt, iter_alt, time_alt_proj = solve_alt_proj(x0, y, Q, env, ϵ, target)
-	# time_alt_proj = measure_fast_method_time(() -> solve_alt_proj(x0, y, Q, env, ϵ, target), time_alt_proj)
-	println("\tAlt Proj: $time_alt_proj s, iter = $iter_alt, violation = $(violation_alt[end])")
+	# x_alt_proj, violation_alt, iter_alt, time_alt_proj = solve_alt_proj(x0, y, Q, env, ϵ, target)
+	# println("\tAlt Proj: $time_alt_proj s, iter = $iter_alt, violation = $(violation_alt[end])")
 
-	x_cimmino, violation_cimmino, iter_cimmino, time_cimmino = solve_cimmino(x0, y, Q, env, ϵ, target, true)
-	# time_cimmino = measure_fast_method_time(() -> solve_cimmino(x0, y, Q, env, ϵ, target, true), time_cimmino)
-	println("\tCimmino: $time_cimmino s, iter = $iter_cimmino, violation = $(violation_cimmino[end])")
+	# x_cimmino, violation_cimmino, iter_cimmino, time_cimmino = solve_cimmino(x0, y, Q, env, ϵ, target, true)
+	# println("\tCimmino: $time_cimmino s, iter = $iter_cimmino, violation = $(violation_cimmino[end])")
 
 	x_sccrm, violation_sccrm, iter_sccrm, time_sccrm = solve_sc_crm(x0, y, Q, env, ϵ, target)
 	println("\tSC CRM: $time_sccrm s, iter = $iter_sccrm, violation = $(violation_sccrm[end])")
@@ -1045,13 +1045,14 @@ function test_cutting_plane(k::UInt, n::UInt, m::UInt, max_iter::UInt, alpha::Re
 	x_sccrm_over, violation_sccrm_over, iter_sccrm_over, time_sccrm_over = solve_sc_crm_over(x0, y, Q, env, epsilon, target)
 	println("\tCRM Over: $time_sccrm_over s, iter = $iter_sccrm_over, violation = $(violation_sccrm_over[end])")
 
+	epsilonBack::Real=0.1
 	x_sccrm_back_over, violation_sccrm_back_over, iter_sccrm_back_over, time_sccrm_back_over = solve_sc_crm_back_over(x0, y, Q, max_iter, env, ϵ, max_backtracking, epsilonBack, epsilonStop, beta)
 	println("\tCRM Back Over: $time_sccrm_back_over s, iter = $iter_sccrm_back_over, violation = $(violation_sccrm_back_over[end])")
 
+	epsilonBack=0.95
 	x_sccrm_back_under, violation_sccrm_back_under, iter_sccrm_back_under, time_sccrm_back_under = solve_sc_crm_back_under(x0, y, Q, max_iter, env, ϵ, max_backtracking, epsilonBack, epsilonStop, beta)
 	println("\tCRM Back Under: $time_sccrm_back_under s, iter =	 $iter_sccrm_back_under, violation = $(violation_sccrm_back_under[end])")
 
-	# savefig(p2, "violations.pdf")
 end
 
 function test_find_circuncenter(m, n)
@@ -1090,9 +1091,9 @@ function main()
 	# ms = [10, 10, 10, 10, 20, 100]
 	# ks = [20, 10, 5, 3, 20, 20]
 
-	ns = UInt[10]
-	ms = UInt[10]
-	ks = UInt[20]
+	ns = UInt[5]
+	ms = UInt[2]
+	ks = UInt[4]
 
 
 	# for i in eachindex(ns)
